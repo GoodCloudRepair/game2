@@ -1,0 +1,6 @@
+[
+  {"id":1,"name":"幸存者","rarity":1,"baseAtk":20,"baseHp":200,"baseDef":5,"growthAtk":3,"growthHp":15,"weaponType":"pistol"},
+  {"id":2,"name":"游侠","rarity":2,"baseAtk":25,"baseHp":180,"baseDef":4,"growthAtk":4,"growthHp":12,"weaponType":"rifle"},
+  {"id":3,"name":"重装兵","rarity":2,"baseAtk":18,"baseHp":280,"baseDef":8,"growthAtk":2,"growthHp":20,"weaponType":"shotgun"},
+  {"id":4,"name":"爆破手","rarity":3,"baseAtk":30,"baseHp":160,"baseDef":3,"growthAtk":5,"growthHp":10,"weaponType":"launcher"}
+]

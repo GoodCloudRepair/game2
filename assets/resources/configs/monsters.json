@@ -1,0 +1,18 @@
+[
+  {"id":1,"name":"行尸","tier":"normal","baseHp":30,"baseAtk":5,"speed":80,"expReward":1,"goldReward":2},
+  {"id":2,"name":"爬行者","tier":"normal","baseHp":25,"baseAtk":4,"speed":100,"expReward":1,"goldReward":2},
+  {"id":3,"name":"膨胀体","tier":"normal","baseHp":50,"baseAtk":8,"speed":50,"expReward":2,"goldReward":3},
+  {"id":4,"name":"喷射者","tier":"normal","baseHp":20,"baseAtk":6,"speed":60,"expReward":1,"goldReward":2},
+  {"id":5,"name":"狂奔者","tier":"normal","baseHp":20,"baseAtk":3,"speed":130,"expReward":1,"goldReward":2},
+  {"id":6,"name":"变异犬","tier":"normal","baseHp":35,"baseAtk":7,"speed":110,"expReward":2,"goldReward":3},
+  {"id":7,"name":"腐蚀者","tier":"normal","baseHp":40,"baseAtk":6,"speed":70,"expReward":2,"goldReward":3},
+  {"id":8,"name":"寄生体","tier":"normal","baseHp":45,"baseAtk":5,"speed":65,"expReward":2,"goldReward":3},
+  {"id":101,"name":"重甲变异体","tier":"elite","baseHp":200,"baseAtk":15,"speed":60,"expReward":8,"goldReward":15},
+  {"id":102,"name":"毒雾母体","tier":"elite","baseHp":150,"baseAtk":12,"speed":70,"expReward":8,"goldReward":15},
+  {"id":103,"name":"裂变巨人","tier":"elite","baseHp":300,"baseAtk":20,"speed":45,"expReward":12,"goldReward":20},
+  {"id":104,"name":"闪电猎手","tier":"elite","baseHp":120,"baseAtk":18,"speed":100,"expReward":10,"goldReward":18},
+  {"id":201,"name":"末日巨兽","tier":"boss","baseHp":2000,"baseAtk":30,"speed":50,"expReward":50,"goldReward":100},
+  {"id":202,"name":"实验体Zero","tier":"boss","baseHp":2500,"baseAtk":25,"speed":60,"expReward":60,"goldReward":120},
+  {"id":203,"name":"腐化之心","tier":"boss","baseHp":3000,"baseAtk":35,"speed":40,"expReward":70,"goldReward":150},
+  {"id":204,"name":"虫群女皇","tier":"boss","baseHp":3500,"baseAtk":28,"speed":55,"expReward":80,"goldReward":180}
+]

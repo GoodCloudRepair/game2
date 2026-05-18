@@ -1,0 +1,14 @@
+[
+  {"id":1,"chapter":1,"level":1,"bossId":201,"rewardGold":80,"rewardMaterial":5,"unlockPower":0},
+  {"id":2,"chapter":1,"level":2,"bossId":201,"rewardGold":100,"rewardMaterial":6,"unlockPower":80},
+  {"id":3,"chapter":1,"level":3,"bossId":201,"rewardGold":120,"rewardMaterial":8,"unlockPower":120},
+  {"id":4,"chapter":1,"level":4,"bossId":201,"rewardGold":150,"rewardMaterial":10,"unlockPower":180},
+  {"id":5,"chapter":2,"level":1,"bossId":202,"rewardGold":180,"rewardMaterial":12,"unlockPower":250},
+  {"id":6,"chapter":2,"level":2,"bossId":202,"rewardGold":210,"rewardMaterial":14,"unlockPower":350},
+  {"id":7,"chapter":2,"level":3,"bossId":202,"rewardGold":250,"rewardMaterial":16,"unlockPower":450},
+  {"id":8,"chapter":2,"level":4,"bossId":202,"rewardGold":300,"rewardMaterial":18,"unlockPower":550},
+  {"id":9,"chapter":3,"level":1,"bossId":203,"rewardGold":350,"rewardMaterial":20,"unlockPower":700},
+  {"id":10,"chapter":3,"level":2,"bossId":203,"rewardGold":400,"rewardMaterial":22,"unlockPower":850},
+  {"id":11,"chapter":3,"level":3,"bossId":203,"rewardGold":450,"rewardMaterial":25,"unlockPower":1000},
+  {"id":12,"chapter":3,"level":4,"bossId":203,"rewardGold":500,"rewardMaterial":28,"unlockPower":1200}
+]

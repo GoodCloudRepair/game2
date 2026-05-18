@@ -1,0 +1,16 @@
+[
+  {"id":"A1","name":"多重射击","category":"atk","baseValue":1,"stackValue":1,"maxStack":5,"weight":8,"description":"+1发子弹"},
+  {"id":"A2","name":"射速提升","category":"atk","baseValue":20,"stackValue":15,"maxStack":5,"weight":8,"description":"射速+20%"},
+  {"id":"A3","name":"穿透弹","category":"atk","baseValue":1,"stackValue":1,"maxStack":3,"weight":6,"description":"穿透1个敌人"},
+  {"id":"A4","name":"范围爆炸","category":"atk","baseValue":40,"stackValue":20,"maxStack":3,"weight":5,"description":"击中爆炸"},
+  {"id":"A5","name":"暴击强化","category":"atk","baseValue":10,"stackValue":8,"maxStack":5,"weight":7,"description":"暴击率+10%"},
+  {"id":"A6","name":"弹幕环绕","category":"atk","baseValue":2,"stackValue":1,"maxStack":4,"weight":6,"description":"2颗环绕弹"},
+  {"id":"D1","name":"生命提升","category":"def","baseValue":20,"stackValue":15,"maxStack":5,"weight":8,"description":"最大HP+20%"},
+  {"id":"D2","name":"护盾","category":"def","baseValue":30,"stackValue":-3,"maxStack":4,"weight":7,"description":"每30秒护盾"},
+  {"id":"D3","name":"生命回复","category":"def","baseValue":1,"stackValue":0.5,"maxStack":5,"weight":8,"description":"每秒回1%HP"},
+  {"id":"D4","name":"减伤","category":"def","baseValue":10,"stackValue":8,"maxStack":4,"weight":7,"description":"减伤+10%"},
+  {"id":"U1","name":"移速提升","category":"util","baseValue":15,"stackValue":10,"maxStack":4,"weight":7,"description":"移速+15%"},
+  {"id":"U2","name":"拾取范围","category":"util","baseValue":30,"stackValue":20,"maxStack":5,"weight":7,"description":"拾取+30%"},
+  {"id":"U3","name":"经验加成","category":"util","baseValue":20,"stackValue":15,"maxStack":5,"weight":8,"description":"经验+20%"},
+  {"id":"U4","name":"金币加成","category":"util","baseValue":25,"stackValue":20,"maxStack":5,"weight":8,"description":"金币+25%"}
+]
