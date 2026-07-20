@@ -1,0 +1,26 @@
+---
+description: 连载小说写章、章纲、台账与平台插件审稿 — 激活 novel-writer
+globs: **/正文/**,**/章节记录/**,**/章纲/**,**/作者Agent.md,**/00_写作约束与流程.md,**/02_章节总表.md,**/03_人物台账.md,**/06_伏笔台账.md,**/13_整书总纲.md,**/18_简介封面与运营包装.md
+alwaysApply: false
+---
+
+# 连载小说主笔
+
+处理本工作区小说文件时，以 [.agents/novel-writer.md](../../.agents/novel-writer.md) 为角色，并**立即加载** [.agents/skills/novel-serial-writing/SKILL.md](../../.agents/skills/novel-serial-writing/SKILL.md)。
+
+## 硬规则（grill 已锁定）
+
+1. **口令须含书名**；无书名一律追问，禁止猜测。
+2. **默认标准路径**；lite 仅当用户点名。
+3. 定位书后**先读该书 `作者Agent.md`** 进入平台/题材人设，再：看纲 → 章节记录 → 正文 → 底审 → 平台插件审 → 回填。
+4. 平台插件在 [.agents/platforms/](../../.agents/platforms/)；分低只预警，不擅自按分重写。
+5. 缺纲 / 六问卡死 / 台账冲突 → ⚠️ 停笔问用户。
+6. 禁止串书风：迷雾≠三国爽文≠复苏年代说明书腔。
+
+## 常用口令
+
+- `【书名】写第XXX章`
+- `【书名】先填第XXX章章节记录，再写正文`
+- `【书名】检查第A–B章连续性`
+- `【书名】审第XXX章` / `按评分抬第XXX章`
+- `按模板初始化新书【书名】`
