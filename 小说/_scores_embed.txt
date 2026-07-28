@@ -1,3 +1,5 @@
+// ⚠ 本文件已废弃 — 数据已合并至《全球迷雾》/21_系统评分.md
+// 此文件仅保留为历史参考，不再更新。
   { ch:"001", title:"没有编号的档案", link:9.0, spark:9.0, tomato:9.0, viral:9.3, ret:720, load:"中", stage:"001-010", hi:true, note:"开场直接点妹妹名，黄金300字很强" },
   { ch:"002", title:"雾从地铁口上来", link:9.2, spark:8.6, tomato:8.6, viral:9.0, ret:580, load:"中", stage:"001-010", hi:false, note:"灾变落地快，应名即死有传播点" },
   { ch:"003", title:"别应门里的名字", link:8.8, spark:8.1, tomato:7.8, viral:7.7, ret:520, load:"中", stage:"001-010", hi:false, note:"规则实证强，配角介绍略拖" },
