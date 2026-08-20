@@ -1,0 +1,2578 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Matrix FP / WebSocket Demo</title>
+  <link rel="icon" href="https://matrix.tencent.com/ai-detect/favicon.ico">
+  <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>
+    try {
+      const savedTheme = window.localStorage.getItem("matrixDemoTheme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+    } catch (error) {
+      // Keep the default dark theme when storage is unavailable.
+    }
+  </script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101415;
+      --surface: #181f21;
+      --surface-soft: #20282a;
+      --ink: #e5ece8;
+      --muted: #a8b5af;
+      --line: #34403e;
+      --line-strong: #53615e;
+      --accent: #78a6ff;
+      --accent-soft: #263a5a;
+      --accent-hover: #5c90ee;
+      --teal: #4cc9b1;
+      --teal-soft: #1a4038;
+      --amber: #f0bd63;
+      --amber-soft: #493a1a;
+      --danger: #ff8980;
+      --danger-soft: #4b2725;
+      --topbar: #111819;
+      --topbar-ink: #f4f7f5;
+      --topbar-border: #2a3735;
+      --topbar-muted: #aebbb4;
+      --topbar-endpoint: #c2cec8;
+      --theme-button-bg: #1c2626;
+      --theme-button-border: #42504c;
+      --theme-button-hover: #2a3835;
+      --status-idle: #8b9894;
+      --status-connected: #5ad3b8;
+      --status-connecting: #f0bd63;
+      --strip-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+      --active-shadow: 0 1px 4px rgba(0, 0, 0, 0.34);
+      --segment-bg: #26302f;
+      --segment-ink: #bbc7c1;
+      --section-label: #cbd6d1;
+      --field-bg: #12191a;
+      --field-icon: #9faca6;
+      --field-code: #e0e8e4;
+      --icon-ink: #b1beb8;
+      --icon-hover-border: #41649a;
+      --icon-disabled: #66736e;
+      --button-disabled-ink: #899590;
+      --button-disabled-bg: #2a3434;
+      --secondary-ink: #d6e0db;
+      --secondary-bg: #192121;
+      --danger-border: #9a524c;
+      --input-bg: #111819;
+      --focus-ring: rgba(120, 166, 255, 0.18);
+      --placeholder: #7d8985;
+      --badge-idle-ink: #c2ccc7;
+      --badge-idle-bg: #27312f;
+      --teal-border: #337f71;
+      --amber-border: #876a32;
+      --score-track: #303b39;
+      --log-scroll: #6b7772;
+      --log-empty: #84918d;
+      --log-line: #273331;
+      --log-time: #83918d;
+      --direction: #afbcb6;
+      --direction-out: #78a6ff;
+      --direction-in: #56d0b2;
+      --direction-error: #ff8c83;
+      --log-label: #e0e8e3;
+      --log-body: #b5c2bc;
+      --notice-ink: #f0c36c;
+      --notice-line: #735d2c;
+      --dialog-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      --dialog-backdrop: rgba(3, 7, 7, 0.7);
+      --toast-bg: #263230;
+      --toast-border: #4b5c57;
+      --toast-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+      --code: #0b1110;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f3f5f7;
+      --surface: #ffffff;
+      --surface-soft: #f8fafb;
+      --ink: #18212b;
+      --muted: #65717d;
+      --line: #d9e0e6;
+      --line-strong: #bcc6cf;
+      --accent: #155eef;
+      --accent-soft: #eaf1ff;
+      --accent-hover: #0f4fce;
+      --teal: #087a72;
+      --teal-soft: #e8f6f4;
+      --amber: #a85300;
+      --amber-soft: #fff3df;
+      --danger: #c0362c;
+      --danger-soft: #fff0ee;
+      --topbar: #17212b;
+      --topbar-ink: #ffffff;
+      --topbar-border: #2b3742;
+      --topbar-muted: #aeb9c3;
+      --topbar-endpoint: #c9d2da;
+      --theme-button-bg: #26323d;
+      --theme-button-border: #40505d;
+      --theme-button-hover: #34414c;
+      --status-idle: #7c8994;
+      --status-connected: #42c6a5;
+      --status-connecting: #f0b34c;
+      --strip-shadow: 0 2px 10px rgba(24, 33, 43, 0.04);
+      --active-shadow: 0 1px 4px rgba(24, 33, 43, 0.12);
+      --segment-bg: #edf1f4;
+      --segment-ink: #52606d;
+      --section-label: #495662;
+      --field-bg: #f7f9fa;
+      --field-icon: #73808b;
+      --field-code: #26323d;
+      --icon-ink: #53616d;
+      --icon-hover-border: #c8d8ff;
+      --icon-disabled: #aab3ba;
+      --button-disabled-ink: #88939d;
+      --button-disabled-bg: #e5e9ed;
+      --secondary-ink: #495662;
+      --secondary-bg: #ffffff;
+      --danger-border: #edbcb7;
+      --input-bg: #ffffff;
+      --focus-ring: rgba(21, 94, 239, 0.11);
+      --placeholder: #98a2ab;
+      --badge-idle-ink: #5d6873;
+      --badge-idle-bg: #edf1f4;
+      --teal-border: #a9ddd6;
+      --amber-border: #efd19d;
+      --score-track: #e2e7eb;
+      --log-scroll: #475563;
+      --log-empty: #788692;
+      --log-line: #26333e;
+      --log-time: #74838e;
+      --direction: #9da9b2;
+      --direction-out: #62a4ff;
+      --direction-in: #55c9a7;
+      --direction-error: #ff8379;
+      --log-label: #d6dde3;
+      --log-body: #aebbc5;
+      --notice-ink: #7b4a0c;
+      --notice-line: #efd5aa;
+      --dialog-shadow: 0 24px 60px rgba(16, 24, 32, 0.28);
+      --dialog-backdrop: rgba(16, 24, 32, 0.48);
+      --toast-bg: #26323d;
+      --toast-border: #40505d;
+      --toast-shadow: 0 10px 28px rgba(16, 24, 32, 0.24);
+      --code: #101820;
+      --shadow: 0 8px 24px rgba(24, 33, 43, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-width: 320px;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: var(--bg);
+      letter-spacing: 0;
+    }
+
+    button,
+    textarea {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      border: 0;
+    }
+
+    .topbar {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 24px;
+      color: var(--topbar-ink);
+      background: var(--topbar);
+      border-bottom: 1px solid var(--topbar-border);
+    }
+
+    .brand {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .brand img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      background: #ffffff;
+      border: 1px solid #ffffff;
+      border-radius: 5px;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    .brand-subtitle {
+      margin-top: 3px;
+      color: var(--topbar-muted);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .endpoint-status {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--topbar-endpoint);
+      font: 12px/1.2 Consolas, "SFMono-Regular", monospace;
+    }
+
+    .topbar-actions {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar .theme-toggle {
+      flex: 0 0 auto;
+      color: var(--topbar-endpoint);
+      background: var(--theme-button-bg);
+      border-color: var(--theme-button-border);
+    }
+
+    .topbar .theme-toggle:hover:not(:disabled) {
+      color: var(--topbar-ink);
+      background: var(--theme-button-hover);
+      border-color: var(--theme-button-border);
+    }
+
+    .endpoint-status span:last-child {
+      max-width: 520px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      flex: 0 0 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--status-idle);
+    }
+
+    .status-dot.connected {
+      background: var(--status-connected);
+    }
+
+    .status-dot.connecting {
+      background: var(--status-connecting);
+    }
+
+    .shell {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 20px 24px 28px;
+    }
+
+    .control-strip {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+      padding: 8px 10px 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: var(--strip-shadow);
+    }
+
+    .mode-copy {
+      min-width: 0;
+    }
+
+    .mode-copy strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .mode-copy span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .segmented {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, 92px);
+      min-height: 34px;
+      padding: 3px;
+      background: var(--segment-bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .segmented button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 0;
+      height: 28px;
+      padding: 0 10px;
+      color: var(--segment-ink);
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .segmented button[aria-pressed="true"] {
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: var(--active-shadow);
+      font-weight: 650;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .panel {
+      min-width: 0;
+      min-height: 720px;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 18px;
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .panel-title svg {
+      width: 17px;
+      height: 17px;
+      color: var(--accent);
+    }
+
+    .panel-meta {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .panel-section {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-section:last-child {
+      border-bottom: 0;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 9px;
+      color: var(--section-label);
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .endpoint-box,
+    .fp-box {
+      min-width: 0;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--field-bg);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+    }
+
+    .endpoint-box svg,
+    .fp-box > svg {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+      color: var(--field-icon);
+    }
+
+    .endpoint-box code,
+    .fp-box code {
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow: hidden;
+      color: var(--field-code);
+      font: 12px/1.4 Consolas, "SFMono-Regular", monospace;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fp-source {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .icon-actions {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon-button {
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: var(--icon-ink);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .icon-button:hover:not(:disabled) {
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-color: var(--icon-hover-border);
+    }
+
+    .icon-button:disabled {
+      color: var(--icon-disabled);
+      cursor: not-allowed;
+    }
+
+    .icon-button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .connection-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 42px;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .primary-button,
+    .secondary-button {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 15px;
+      border-radius: 5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary-button {
+      color: #ffffff;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .primary-button:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .primary-button:disabled {
+      color: var(--button-disabled-ink);
+      background: var(--button-disabled-bg);
+      border-color: var(--button-disabled-bg);
+      cursor: not-allowed;
+    }
+
+    .secondary-button {
+      color: var(--secondary-ink);
+      background: var(--secondary-bg);
+      border: 1px solid var(--line-strong);
+    }
+
+    .secondary-button:hover:not(:disabled) {
+      color: var(--danger);
+      background: var(--danger-soft);
+      border-color: var(--danger-border);
+    }
+
+    .primary-button svg,
+    .secondary-button svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .text-section {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .text-tools {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .text-count {
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .text-count.ready {
+      color: var(--teal);
+      font-weight: 700;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 270px;
+      flex: 1 1 auto;
+      resize: vertical;
+      padding: 13px 14px;
+      color: var(--ink);
+      background: var(--input-bg);
+      border: 1px solid var(--line-strong);
+      border-radius: 5px;
+      outline: none;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    textarea::placeholder {
+      color: var(--placeholder);
+    }
+
+    .submit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .submit-state {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .submit-row .primary-button {
+      min-width: 154px;
+      flex: 0 0 auto;
+    }
+
+    .connection-badge {
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 9px;
+      color: var(--badge-idle-ink);
+      background: var(--badge-idle-bg);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .connection-badge.connected {
+      color: var(--teal);
+      background: var(--teal-soft);
+      border-color: var(--teal-border);
+    }
+
+    .connection-badge.connecting {
+      color: var(--amber);
+      background: var(--amber-soft);
+      border-color: var(--amber-border);
+    }
+
+    .connection-badge.error {
+      color: var(--danger);
+      background: var(--danger-soft);
+      border-color: var(--danger-border);
+    }
+
+    .connection-badge .mini-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .monitor-summary {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 18px;
+      min-height: 138px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .summary-copy {
+      min-width: 0;
+    }
+
+    .summary-eyebrow {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .summary-title {
+      margin: 8px 0 5px;
+      font-size: 20px;
+      line-height: 1.25;
+      font-weight: 750;
+    }
+
+    .summary-detail {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .uses-box {
+      width: 90px;
+      min-height: 82px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-soft);
+      border-left: 3px solid var(--teal);
+    }
+
+    .uses-value {
+      color: var(--ink);
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .uses-label {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .score-area {
+      display: none;
+      padding: 15px 18px;
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .score-area.visible {
+      display: block;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .score-value {
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 9px;
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score-status {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .score-status.pass {
+      color: var(--teal);
+    }
+
+    .score-status.above-target {
+      color: var(--danger);
+    }
+
+    .score-track {
+      width: 100%;
+      height: 8px;
+      overflow: hidden;
+      background: var(--score-track);
+      border-radius: 4px;
+    }
+
+    .score-fill {
+      width: 0;
+      height: 100%;
+      background: var(--teal);
+      transition: width 240ms ease;
+    }
+
+    .log-section {
+      min-height: 0;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .log-toolbar {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .log-title {
+      color: var(--section-label);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .log-list {
+      min-height: 360px;
+      max-height: 490px;
+      flex: 1 1 auto;
+      overflow: auto;
+      padding: 10px 12px 14px;
+      background: var(--code);
+      scrollbar-color: var(--log-scroll) var(--code);
+      scrollbar-width: thin;
+    }
+
+    .log-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      color: var(--log-empty);
+      font: 12px/1.5 Consolas, "SFMono-Regular", monospace;
+      text-align: center;
+    }
+
+    .log-entry {
+      display: grid;
+      grid-template-columns: 68px minmax(0, 1fr);
+      gap: 10px;
+      padding: 9px 7px;
+      border-bottom: 1px solid var(--log-line);
+    }
+
+    .log-entry:last-child {
+      border-bottom: 0;
+    }
+
+    .log-side {
+      padding-top: 2px;
+    }
+
+    .log-time {
+      display: block;
+      color: var(--log-time);
+      font: 10px/1.2 Consolas, "SFMono-Regular", monospace;
+    }
+
+    .direction {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      color: var(--direction);
+      font: 10px/1 Consolas, "SFMono-Regular", monospace;
+      font-weight: 700;
+    }
+
+    .direction.out {
+      color: var(--direction-out);
+    }
+
+    .direction.in {
+      color: var(--direction-in);
+    }
+
+    .direction.error {
+      color: var(--direction-error);
+    }
+
+    .log-label {
+      color: var(--log-label);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .log-content {
+      min-width: 0;
+    }
+
+    .log-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+      margin-bottom: 5px;
+    }
+
+    .log-heading .log-label {
+      min-width: 0;
+      margin: 0;
+    }
+
+    .log-copy-button {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: var(--log-body);
+      background: transparent;
+      border: 1px solid var(--log-line);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .log-copy-button:hover {
+      color: var(--log-label);
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .log-copy-button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    .log-copy-button svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .log-entry pre {
+      max-width: 100%;
+      margin: 0;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      color: var(--log-body);
+      font: 11px/1.55 Consolas, "SFMono-Regular", monospace;
+    }
+
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 12px 18px;
+      color: var(--notice-ink);
+      background: var(--amber-soft);
+      border-top: 1px solid var(--notice-line);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .notice svg {
+      flex: 0 0 auto;
+      width: 15px;
+      height: 15px;
+      margin-top: 1px;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .fp-dialog {
+      width: min(460px, calc(100vw - 28px));
+      padding: 0;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      box-shadow: var(--dialog-shadow);
+    }
+
+    .fp-dialog::backdrop {
+      background: var(--dialog-backdrop);
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 52px;
+      padding: 0 14px 0 18px;
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .dialog-body {
+      padding: 18px;
+    }
+
+    .dialog-body label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--section-label);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .dialog-body input {
+      width: 100%;
+      height: 42px;
+      padding: 0 11px;
+      color: var(--ink);
+      background: var(--input-bg);
+      border: 1px solid var(--line-strong);
+      border-radius: 5px;
+      outline: none;
+      font: 13px/1 Consolas, "SFMono-Regular", monospace;
+      letter-spacing: 0;
+    }
+
+    .dialog-body input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    .dialog-body .token-save-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0 0;
+      color: var(--section-label);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: none;
+    }
+
+    .dialog-body .token-save-option input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      padding: 0;
+      accent-color: var(--accent);
+      box-shadow: none;
+    }
+
+    .dialog-note,
+    .dialog-error {
+      margin-top: 8px;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .dialog-note {
+      color: var(--muted);
+    }
+
+    .dialog-error {
+      min-height: 16px;
+      color: var(--danger);
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .dialog-actions button {
+      min-height: 36px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 20;
+      max-width: min(360px, calc(100vw - 32px));
+      padding: 11px 13px;
+      color: #ffffff;
+      background: var(--toast-bg);
+      border: 1px solid var(--toast-border);
+      border-radius: 5px;
+      box-shadow: var(--toast-shadow);
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1040px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        min-height: auto;
+      }
+
+      .log-list {
+        max-height: 520px;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 16px;
+      }
+
+      .topbar-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .endpoint-status {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .endpoint-status span:last-child {
+        max-width: calc(100vw - 98px);
+      }
+
+      .shell {
+        padding: 12px 10px 20px;
+      }
+
+      .control-strip {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 12px;
+      }
+
+      .segmented {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .panel-header,
+      .panel-section,
+      .monitor-summary,
+      .notice {
+        padding-left: 13px;
+        padding-right: 13px;
+      }
+
+      .submit-row {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .submit-row .primary-button {
+        width: 100%;
+      }
+
+      .monitor-summary {
+        grid-template-columns: minmax(0, 1fr) 78px;
+      }
+
+      .uses-box {
+        width: 78px;
+      }
+
+      .log-entry {
+        grid-template-columns: 58px minmax(0, 1fr);
+      }
+
+      .footer {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="https://matrix.tencent.com/ai-detect/favicon.ico" alt="朱雀 AI">
+      <div>
+        <div class="brand-name">Matrix FP / WebSocket Demo</div>
+        <div class="brand-subtitle">朱雀 AI 文本检测公开前端协议验证</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="endpoint-status" title="WebSocket endpoint">
+        <span id="topStatusDot" class="status-dot"></span>
+        <span>wss://matrix.tencent.com/ai_gen_txt_server/getClassify</span>
+      </div>
+      <button id="themeToggle" class="icon-button theme-toggle" type="button" title="切换到浅色模式" aria-label="切换到浅色模式" aria-pressed="true">
+        <i data-lucide="sun"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="control-strip" aria-label="运行模式">
+      <div class="mode-copy">
+        <strong id="modeTitle">实时协议</strong>
+        <span id="modeDescription">连接腾讯线上 WebSocket，检测前调用官方验证码</span>
+      </div>
+      <div class="segmented" role="group" aria-label="选择运行模式">
+        <button id="liveModeButton" type="button" aria-pressed="true">
+          <i data-lucide="radio-tower"></i>
+          实时
+        </button>
+        <button id="mockModeButton" type="button" aria-pressed="false">
+          <i data-lucide="flask-conical"></i>
+          模拟
+        </button>
+      </div>
+    </section>
+
+    <div class="workspace">
+      <section class="panel" aria-labelledby="requestPanelTitle">
+        <div class="panel-header">
+          <div id="requestPanelTitle" class="panel-title">
+            <i data-lucide="send"></i>
+            请求控制台
+          </div>
+          <div id="connectionBadge" class="connection-badge">
+            <span class="mini-dot"></span>
+            <span id="connectionBadgeText">未连接</span>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-label">
+            <span>Endpoint</span>
+            <span id="protocolLabel">WSS / Live</span>
+          </div>
+          <div class="endpoint-box">
+            <i data-lucide="network"></i>
+            <code id="endpointValue">wss://matrix.tencent.com/ai_gen_txt_server/getClassify</code>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-label">
+            <span>Fingerprint</span>
+            <span id="fpState">准备中</span>
+          </div>
+          <div class="fp-box">
+            <i data-lucide="fingerprint"></i>
+            <code id="fpValue">正在生成...</code>
+            <div class="icon-actions">
+              <button id="importFpButton" class="icon-button" type="button" title="导入已有 fp" aria-label="导入已有 fp">
+                <i data-lucide="pencil-line"></i>
+              </button>
+              <button id="copyFpButton" class="icon-button" type="button" title="复制 fp" aria-label="复制 fp" disabled>
+                <i data-lucide="copy"></i>
+              </button>
+              <button id="refreshFpButton" class="icon-button" type="button" title="重新生成 fp" aria-label="重新生成 fp" disabled>
+                <i data-lucide="refresh-cw"></i>
+              </button>
+            </div>
+          </div>
+          <div id="fpSource" class="fp-source">FingerprintJS 4.5.1 + timestamp + Math.random + SHA-256[:32]</div>
+          <div class="connection-actions">
+            <button id="connectButton" class="primary-button" type="button" disabled>
+              <i data-lucide="plug-zap"></i>
+              <span id="connectButtonText">连接并发送 fp</span>
+            </button>
+            <button id="disconnectButton" class="secondary-button" type="button" title="断开连接" aria-label="断开连接" disabled>
+              <i data-lucide="unplug"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-label">
+            <span>Access Token</span>
+            <span id="tokenState">未导入</span>
+          </div>
+          <div class="fp-box">
+            <i data-lucide="key-round"></i>
+            <code id="tokenValue">未导入，仅使用 fp</code>
+            <div class="icon-actions">
+              <button id="importTokenButton" class="icon-button" type="button" title="导入访问令牌" aria-label="导入访问令牌">
+                <i data-lucide="key-round"></i>
+              </button>
+              <button id="clearTokenButton" class="icon-button" type="button" title="清除本地访问令牌" aria-label="清除本地访问令牌" disabled>
+                <i data-lucide="trash-2"></i>
+              </button>
+            </div>
+          </div>
+          <div id="tokenSource" class="fp-source">令牌不会显示在页面或日志中。</div>
+        </div>
+
+        <div class="panel-section text-section">
+          <div class="section-label">
+            <span>Detection Text</span>
+            <div class="text-tools">
+              <span id="textCount" class="text-count">0 / 350</span>
+              <button id="sampleButton" class="icon-button" type="button" title="填入示例文本" aria-label="填入示例文本">
+                <i data-lucide="file-text"></i>
+              </button>
+              <button id="clearTextButton" class="icon-button" type="button" title="清空文本" aria-label="清空文本">
+                <i data-lucide="eraser"></i>
+              </button>
+            </div>
+          </div>
+          <textarea id="textInput" spellcheck="false" placeholder="输入不少于 350 个计数单位的文本"></textarea>
+          <div class="submit-row">
+            <div id="submitState" class="submit-state">等待连接</div>
+            <button id="detectButton" class="primary-button" type="button" disabled>
+              <i data-lucide="scan-search"></i>
+              <span>验证并检测</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel" aria-labelledby="monitorPanelTitle">
+        <div class="panel-header">
+          <div id="monitorPanelTitle" class="panel-title">
+            <i data-lucide="activity"></i>
+            消息监视器
+          </div>
+          <div class="panel-meta">JSON Frames</div>
+        </div>
+
+        <section class="monitor-summary" aria-live="polite">
+          <div class="summary-copy">
+            <div class="summary-eyebrow">Current state</div>
+            <div id="summaryTitle" class="summary-title">等待连接</div>
+            <div id="summaryDetail" class="summary-detail">fp 生成后即可建立匿名会话</div>
+          </div>
+          <div class="uses-box">
+            <div id="usesValue" class="uses-value">--</div>
+            <div class="uses-label">AVAILABLE</div>
+          </div>
+        </section>
+
+        <section id="scoreArea" class="score-area" aria-live="polite">
+          <div class="score-row">
+            <span>AI 感 · conf</span>
+            <span id="scoreValue" class="score-value">--</span>
+          </div>
+          <div class="score-meta">
+            <span id="scoreRawValue">来源：--</span>
+            <span>目标：&lt; 0.50</span>
+          </div>
+          <div class="score-track" aria-hidden="true">
+            <div id="scoreFill" class="score-fill"></div>
+          </div>
+          <div id="scoreStatus" class="score-status">等待服务端测量结果</div>
+        </section>
+
+        <section class="log-section">
+          <div class="log-toolbar">
+            <div class="log-title">Event stream</div>
+            <button id="clearLogButton" class="icon-button" type="button" title="清空消息" aria-label="清空消息">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+          <div id="logList" class="log-list" aria-live="polite">
+            <div id="logEmpty" class="log-empty">等待 WebSocket 事件</div>
+          </div>
+        </section>
+
+        <div class="notice">
+          <i data-lucide="shield-alert"></i>
+          <span>实时模式受腾讯验证码、Origin 与服务端策略约束；异步结果接口若未开放 CORS，本地页面只能看到任务状态。</span>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="footer">
+      <span>协议依据：2026-08-17 线上前端分包，仅用于调试公开接口行为。</span>
+      <a href="https://matrix.tencent.com/ai-detect/ai_gen_txt" target="_blank" rel="noreferrer">打开朱雀 AI 官方页面</a>
+    </footer>
+  </main>
+
+  <dialog id="fpDialog" class="fp-dialog">
+    <div class="dialog-header">
+      <span>导入已有 fp</span>
+      <button id="closeFpDialogButton" class="icon-button" type="button" title="关闭" aria-label="关闭">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form id="fpForm" class="dialog-body">
+      <label for="manualFpInput">32 位十六进制 fp</label>
+      <input id="manualFpInput" type="text" inputmode="text" maxlength="32" autocomplete="off" spellcheck="false" placeholder="00000000000000000000000000000000">
+      <div class="dialog-note">该值仅保存在当前本地页面；点击连接后才会发送给腾讯 WebSocket。</div>
+      <div id="fpDialogError" class="dialog-error" aria-live="polite"></div>
+      <div class="dialog-actions">
+        <button id="cancelFpButton" class="secondary-button" type="button">取消</button>
+        <button class="primary-button" type="submit">
+          <i data-lucide="check"></i>
+          使用此 fp
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="tokenDialog" class="fp-dialog">
+    <div class="dialog-header">
+      <span>导入访问令牌</span>
+      <button id="closeTokenDialogButton" class="icon-button" type="button" title="关闭" aria-label="关闭">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form id="tokenForm" class="dialog-body">
+      <label for="manualTokenInput">Access Token</label>
+      <input id="manualTokenInput" type="password" inputmode="text" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="仅在此浏览器中输入">
+      <label class="token-save-option" for="saveTokenCheckbox">
+        <input id="saveTokenCheckbox" type="checkbox">
+        <span>保存到当前浏览器</span>
+      </label>
+      <div class="dialog-note">保存后，后续打开此本地页面会自动加载。请勿在共享设备保存；令牌仅在点击连接时发送给腾讯，日志不会显示完整值。</div>
+      <div id="tokenDialogError" class="dialog-error" aria-live="polite"></div>
+      <div class="dialog-actions">
+        <button id="cancelTokenButton" class="secondary-button" type="button">取消</button>
+        <button class="primary-button" type="submit">
+          <i data-lucide="check"></i>
+          使用令牌
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="sessionDialog" class="fp-dialog">
+    <div class="dialog-header">
+      <span id="sessionDialogTitle">会话需要手动处理</span>
+      <button id="closeSessionDialogButton" class="icon-button" type="button" title="关闭" aria-label="关闭">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <div id="sessionDialogMessage" class="dialog-note">服务端暂不接受当前匿名会话。</div>
+      <div class="dialog-note">本页不会自动变更网络、创建新身份或规避服务限制。处理完成后可由你确认重新连接。</div>
+      <div class="dialog-actions">
+        <button id="dismissSessionDialogButton" class="secondary-button" type="button">暂不处理</button>
+        <button id="retrySessionButton" class="primary-button" type="button">
+          <i data-lucide="rotate-cw"></i>
+          我已处理，重新连接
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script type="module">
+    const UPSTREAM_ENDPOINT = "wss://matrix.tencent.com/ai_gen_txt_server/getClassify";
+    const IS_LOCAL_HTTP = ["127.0.0.1", "localhost"].includes(window.location.hostname) && window.location.protocol.startsWith("http");
+    const ENDPOINT = IS_LOCAL_HTTP
+      ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/matrix-proxy`
+      : UPSTREAM_ENDPOINT;
+    const RESULT_ENDPOINT = IS_LOCAL_HTTP
+      ? `${window.location.origin}/matrix-result`
+      : "https://matrix.tencent.com/user/detect/result";
+    const CAPTCHA_APP_ID = "2089775896";
+    const FP_MODULE_URL = "https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4.5.1/+esm";
+    const SHA_MODULE_URL = "https://cdn.jsdelivr.net/npm/js-sha256@0.11.0/+esm";
+    const MIN_TEXT_UNITS = 350;
+    const MAX_POLL_ATTEMPTS = 24;
+    const CONF_TARGET = 0.5;
+    const THEME_STORAGE_KEY = "matrixDemoTheme";
+
+    const sampleText = `城市图书馆在清晨八点开放。管理员先检查阅览区的照明和通风，再把昨晚归还的书籍按编号放回书架。靠窗的位置通常最先坐满，有人准备考试，有人整理工作资料，也有人只是安静地读一会儿报纸。九点以后，咨询台逐渐忙起来，读者会询问借阅期限、数据库入口和旧资料的保存位置。管理员需要准确记录问题，也要提醒大家把手机调成静音。
+
+中午时段，馆内的人流稍微减少。工作人员会利用这段时间检查设备，补充打印纸，并处理预约书籍。新到的书先完成登记、贴标和分类，然后才会出现在检索系统中。对于破损的旧书，他们会根据情况修补或转入保存库，避免在流通过程中继续损坏。
+
+下午常有学生结伴前来，他们围绕课程作业查找资料，也会讨论不同来源是否可靠。管理员不会直接替他们完成答案，而是帮助他们缩小检索范围，比较出版时间、作者背景和引用记录。到了闭馆前，广播会提前提醒读者保存文件、办理借阅并带走个人物品。灯光逐区关闭后，阅览室重新安静下来，等待第二天再次开放。`;
+
+    const elements = {
+      themeToggle: document.querySelector("#themeToggle"),
+      liveModeButton: document.querySelector("#liveModeButton"),
+      mockModeButton: document.querySelector("#mockModeButton"),
+      modeTitle: document.querySelector("#modeTitle"),
+      modeDescription: document.querySelector("#modeDescription"),
+      protocolLabel: document.querySelector("#protocolLabel"),
+      endpointValue: document.querySelector("#endpointValue"),
+      fpValue: document.querySelector("#fpValue"),
+      fpState: document.querySelector("#fpState"),
+      fpSource: document.querySelector("#fpSource"),
+      tokenValue: document.querySelector("#tokenValue"),
+      tokenState: document.querySelector("#tokenState"),
+      tokenSource: document.querySelector("#tokenSource"),
+      importFpButton: document.querySelector("#importFpButton"),
+      copyFpButton: document.querySelector("#copyFpButton"),
+      refreshFpButton: document.querySelector("#refreshFpButton"),
+      importTokenButton: document.querySelector("#importTokenButton"),
+      clearTokenButton: document.querySelector("#clearTokenButton"),
+      connectButton: document.querySelector("#connectButton"),
+      connectButtonText: document.querySelector("#connectButtonText"),
+      disconnectButton: document.querySelector("#disconnectButton"),
+      connectionBadge: document.querySelector("#connectionBadge"),
+      connectionBadgeText: document.querySelector("#connectionBadgeText"),
+      topStatusDot: document.querySelector("#topStatusDot"),
+      textInput: document.querySelector("#textInput"),
+      textCount: document.querySelector("#textCount"),
+      sampleButton: document.querySelector("#sampleButton"),
+      clearTextButton: document.querySelector("#clearTextButton"),
+      detectButton: document.querySelector("#detectButton"),
+      submitState: document.querySelector("#submitState"),
+      summaryTitle: document.querySelector("#summaryTitle"),
+      summaryDetail: document.querySelector("#summaryDetail"),
+      usesValue: document.querySelector("#usesValue"),
+      scoreArea: document.querySelector("#scoreArea"),
+      scoreValue: document.querySelector("#scoreValue"),
+      scoreRawValue: document.querySelector("#scoreRawValue"),
+      scoreFill: document.querySelector("#scoreFill"),
+      scoreStatus: document.querySelector("#scoreStatus"),
+      logList: document.querySelector("#logList"),
+      clearLogButton: document.querySelector("#clearLogButton"),
+      fpDialog: document.querySelector("#fpDialog"),
+      fpForm: document.querySelector("#fpForm"),
+      manualFpInput: document.querySelector("#manualFpInput"),
+      fpDialogError: document.querySelector("#fpDialogError"),
+      closeFpDialogButton: document.querySelector("#closeFpDialogButton"),
+      cancelFpButton: document.querySelector("#cancelFpButton"),
+      tokenDialog: document.querySelector("#tokenDialog"),
+      tokenForm: document.querySelector("#tokenForm"),
+      manualTokenInput: document.querySelector("#manualTokenInput"),
+      saveTokenCheckbox: document.querySelector("#saveTokenCheckbox"),
+      tokenDialogError: document.querySelector("#tokenDialogError"),
+      closeTokenDialogButton: document.querySelector("#closeTokenDialogButton"),
+      cancelTokenButton: document.querySelector("#cancelTokenButton"),
+      sessionDialog: document.querySelector("#sessionDialog"),
+      sessionDialogTitle: document.querySelector("#sessionDialogTitle"),
+      sessionDialogMessage: document.querySelector("#sessionDialogMessage"),
+      closeSessionDialogButton: document.querySelector("#closeSessionDialogButton"),
+      dismissSessionDialogButton: document.querySelector("#dismissSessionDialogButton"),
+      retrySessionButton: document.querySelector("#retrySessionButton"),
+      toast: document.querySelector("#toast")
+    };
+
+    const state = {
+      mode: "live",
+      fp: "",
+      fpSource: "",
+      socket: null,
+      connected: false,
+      connecting: false,
+      handshakeComplete: false,
+      handshakeRejected: false,
+      processing: false,
+      pendingText: "",
+      accessToken: "",
+      accessTokenSource: "",
+      accessTokenPersistent: false,
+      captcha: null,
+      pollTimer: null,
+      pollAttempts: 0,
+      toastTimer: null,
+      fpModule: null,
+      shaModule: null,
+      proxyAvailable: !IS_LOCAL_HTTP
+    };
+
+    function renderIcons() {
+      if (window.lucide) {
+        window.lucide.createIcons({ attrs: { "stroke-width": 1.8 } });
+      }
+    }
+
+    function getTheme() {
+      return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+    }
+
+    function applyTheme(theme, persist = false) {
+      const nextTheme = theme === "light" ? "light" : "dark";
+      const darkMode = nextTheme === "dark";
+      document.documentElement.dataset.theme = nextTheme;
+      elements.themeToggle.setAttribute("aria-pressed", String(darkMode));
+      elements.themeToggle.setAttribute("title", darkMode ? "切换到浅色模式" : "切换到暗色模式");
+      elements.themeToggle.setAttribute("aria-label", darkMode ? "切换到浅色模式" : "切换到暗色模式");
+      elements.themeToggle.innerHTML = `<i data-lucide="${darkMode ? "sun" : "moon"}"></i>`;
+
+      if (persist) {
+        try {
+          window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+        } catch (error) {
+          // The selected theme still applies for the current page session.
+        }
+      }
+
+      renderIcons();
+    }
+
+    function showToast(message) {
+      window.clearTimeout(state.toastTimer);
+      elements.toast.textContent = message;
+      elements.toast.classList.add("visible");
+      state.toastTimer = window.setTimeout(() => {
+        elements.toast.classList.remove("visible");
+      }, 2200);
+    }
+
+    function getTextUnits(text) {
+      return text.split(/\s+/).reduce((total, part) => {
+        return total + (/^[a-zA-Z]+$/.test(part) ? 1 : part.length);
+      }, 0);
+    }
+
+    function updateTextCount() {
+      const count = getTextUnits(elements.textInput.value);
+      elements.textCount.textContent = `${count} / ${MIN_TEXT_UNITS}`;
+      elements.textCount.classList.toggle("ready", count >= MIN_TEXT_UNITS);
+      updateControls();
+    }
+
+    function setConnectionState(kind, title, detail) {
+      elements.connectionBadge.className = "connection-badge";
+      elements.topStatusDot.className = "status-dot";
+
+      if (kind === "connected") {
+        elements.connectionBadge.classList.add("connected");
+        elements.topStatusDot.classList.add("connected");
+      } else if (kind === "connecting") {
+        elements.connectionBadge.classList.add("connecting");
+        elements.topStatusDot.classList.add("connecting");
+      } else if (kind === "error") {
+        elements.connectionBadge.classList.add("error");
+      }
+
+      elements.connectionBadgeText.textContent = title;
+      elements.summaryTitle.textContent = title;
+      elements.summaryDetail.textContent = detail;
+    }
+
+    function updateControls() {
+      const textReady = getTextUnits(elements.textInput.value) >= MIN_TEXT_UNITS;
+      const hasFp = state.fp.length === 32;
+      const hasAccessToken = Boolean(state.accessToken);
+      const hasIdentity = hasFp || hasAccessToken;
+      const busy = state.connecting || state.processing;
+      const transportReady = state.mode === "mock" || !IS_LOCAL_HTTP || state.proxyAvailable;
+
+      elements.connectButton.disabled = !hasIdentity || state.connected || state.connecting || !transportReady;
+      elements.disconnectButton.disabled = !state.connected && !state.connecting;
+      elements.importFpButton.disabled = state.connected || state.connecting;
+      elements.copyFpButton.disabled = !hasFp;
+      elements.refreshFpButton.disabled = !hasFp || state.connected || state.connecting;
+      elements.importTokenButton.disabled = state.connected || state.connecting;
+      elements.clearTokenButton.disabled = !hasAccessToken || state.connected || state.connecting;
+      elements.detectButton.disabled = !state.connected || !state.handshakeComplete || !textReady || busy;
+
+      if (!transportReady) {
+        elements.submitState.textContent = "请使用本地 Node 服务启动 Demo";
+      } else if (!state.connected) {
+        elements.submitState.textContent = textReady ? "文本已就绪，等待连接" : "至少需要 350 个计数单位";
+      } else if (!state.handshakeComplete) {
+        elements.submitState.textContent = "等待服务端确认 fp";
+      } else if (state.processing) {
+        elements.submitState.textContent = "检测流程进行中";
+      } else if (textReady) {
+        elements.submitState.textContent = state.mode === "live" ? "将先调用腾讯验证码" : "模拟验证码与检测响应";
+      } else {
+        elements.submitState.textContent = "至少需要 350 个计数单位";
+      }
+    }
+
+    function formatPayload(payload) {
+      if (typeof payload === "string") {
+        return payload;
+      }
+      try {
+        return JSON.stringify(payload, (key, value) => {
+          return key.toLowerCase() === "access_token" ? "[hidden]" : value;
+        }, 2);
+      } catch {
+        return String(payload);
+      }
+    }
+
+    async function copyText(text) {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch {
+        // Fall back for file:// pages and browsers without Clipboard API support.
+      }
+
+      try {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.append(area);
+        area.select();
+        const copied = document.execCommand("copy");
+        area.remove();
+        return copied;
+      } catch {
+        return false;
+      }
+    }
+
+    async function copyLogMessage(text) {
+      showToast(await copyText(text) ? "消息内容已复制" : "复制失败，请手动选择文本");
+    }
+
+    function addLog(direction, label, payload) {
+      const empty = elements.logList.querySelector(".log-empty");
+      if (empty) {
+        empty.remove();
+      }
+
+      const entry = document.createElement("article");
+      entry.className = "log-entry";
+
+      const side = document.createElement("div");
+      side.className = "log-side";
+
+      const time = document.createElement("span");
+      time.className = "log-time";
+      time.textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false });
+
+      const directionNode = document.createElement("span");
+      directionNode.className = `direction ${direction}`;
+      directionNode.textContent = direction === "out" ? "OUT  ->" : direction === "in" ? "IN   <-" : direction === "error" ? "ERROR" : "SYSTEM";
+
+      side.append(time, directionNode);
+
+      const content = document.createElement("div");
+      content.className = "log-content";
+      const heading = document.createElement("div");
+      heading.className = "log-heading";
+
+      const title = document.createElement("div");
+      title.className = "log-label";
+      title.textContent = label;
+
+      const messageText = formatPayload(payload);
+      const copyButton = document.createElement("button");
+      copyButton.className = "log-copy-button";
+      copyButton.type = "button";
+      copyButton.title = "复制消息内容";
+      copyButton.setAttribute("aria-label", "复制消息内容");
+      copyButton.innerHTML = '<i data-lucide="copy"></i>';
+      copyButton.addEventListener("click", () => copyLogMessage(messageText));
+
+      const pre = document.createElement("pre");
+      pre.textContent = messageText;
+
+      heading.append(title, copyButton);
+      content.append(heading, pre);
+      entry.append(side, content);
+      elements.logList.append(entry);
+      elements.logList.scrollTop = elements.logList.scrollHeight;
+      renderIcons();
+    }
+
+    function clearLogs() {
+      elements.logList.replaceChildren();
+      const empty = document.createElement("div");
+      empty.className = "log-empty";
+      empty.textContent = "等待 WebSocket 事件";
+      elements.logList.append(empty);
+    }
+
+    async function sha256(text) {
+      if (window.crypto?.subtle) {
+        const bytes = new TextEncoder().encode(text);
+        const digest = await window.crypto.subtle.digest("SHA-256", bytes);
+        return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+      }
+
+      state.shaModule ||= await import(SHA_MODULE_URL);
+      return state.shaModule.sha256(text);
+    }
+
+    async function generateFp(force = false) {
+      if (state.connected || state.connecting) {
+        showToast("请先断开连接");
+        return;
+      }
+
+      const cached = window.localStorage.getItem("fp");
+      if (!force && cached && cached.length === 32) {
+        state.fp = cached;
+        state.fpSource = window.localStorage.getItem("matrixDemoFpSource") === "manual"
+          ? "manual import"
+          : "localStorage cache";
+        renderFp();
+        addLog("system", "复用本地 fp", { fp: cached, storageKey: "fp" });
+        return cached;
+      }
+
+      elements.fpState.textContent = "生成中";
+      elements.fpValue.textContent = "正在生成...";
+      elements.refreshFpButton.disabled = true;
+      elements.connectButton.disabled = true;
+
+      let raw;
+      let source;
+
+      try {
+        state.fpModule ||= await import(FP_MODULE_URL);
+        const FingerprintJS = state.fpModule.default;
+        const agent = await FingerprintJS.load({ monitoring: false });
+        const result = await agent.get();
+        raw = `${result.visitorId}_${Date.now()}_${Math.random()}`;
+        source = `FingerprintJS ${result.version || "4.5.1"}`;
+      } catch (error) {
+        raw = `fp_err_${Date.now()}_${Math.random()}`;
+        source = "fallback: timestamp + Math.random";
+        addLog("error", "FingerprintJS 加载失败，使用官网回退逻辑", String(error));
+      }
+
+      const fp = (await sha256(raw)).substring(0, 32);
+      window.localStorage.setItem("fp", fp);
+      window.localStorage.setItem("matrixDemoFpSource", "generated");
+      state.fp = fp;
+      state.fpSource = source;
+      renderFp();
+      addLog("system", force ? "已重新生成 fp" : "已生成 fp", {
+        fp,
+        algorithm: "SHA-256[:32]",
+        source
+      });
+      return fp;
+    }
+
+    function renderFp() {
+      elements.fpValue.textContent = state.fp;
+      const manual = state.fpSource === "manual import";
+      elements.fpState.textContent = state.fp.length === 32 ? (manual ? "manual" : "32 hex") : "无效";
+      elements.fpSource.textContent = manual
+        ? "Manual import · localStorage.fp"
+        : `${state.fpSource} + timestamp + Math.random + SHA-256[:32]`;
+      updateControls();
+    }
+
+    function isValidAccessToken(value) {
+      return value.length >= 16 && value.length <= 4096 && !/\s/.test(value);
+    }
+
+    function maskAccessToken(value) {
+      return `已导入 ••••${value.slice(-4)}`;
+    }
+
+    function renderAccessToken() {
+      const hasAccessToken = Boolean(state.accessToken);
+      elements.connectButtonText.textContent = hasAccessToken ? "连接并发送令牌" : "连接并发送 fp";
+      elements.tokenState.textContent = hasAccessToken
+        ? (state.accessTokenPersistent ? "已保存" : "会话中")
+        : "未导入";
+      elements.tokenValue.textContent = hasAccessToken
+        ? maskAccessToken(state.accessToken)
+        : "未导入，仅使用 fp";
+      elements.tokenSource.textContent = hasAccessToken
+        ? (state.accessTokenPersistent
+          ? "已保存到当前浏览器；仅在手动连接时使用。"
+          : "仅保存在当前页面会话中；关闭页面后失效。")
+        : "令牌不会显示在页面或日志中。";
+      updateControls();
+    }
+
+    function loadStoredAccessToken() {
+      const stored = (window.localStorage.getItem("matrixDemoAccessToken") || "").trim();
+      if (!isValidAccessToken(stored)) {
+        renderAccessToken();
+        return;
+      }
+
+      state.accessToken = stored;
+      state.accessTokenSource = "localStorage";
+      state.accessTokenPersistent = true;
+      renderAccessToken();
+      addLog("system", "已加载本地访问令牌", { storageKey: "matrixDemoAccessToken", access_token: "[hidden]" });
+    }
+
+    function openFpDialog() {
+      elements.manualFpInput.value = "";
+      elements.fpDialogError.textContent = "";
+      elements.fpDialog.showModal();
+      window.setTimeout(() => elements.manualFpInput.focus(), 0);
+      renderIcons();
+    }
+
+    function closeFpDialog() {
+      elements.fpDialog.close();
+      elements.fpDialogError.textContent = "";
+    }
+
+    function openTokenDialog() {
+      elements.manualTokenInput.value = "";
+      elements.saveTokenCheckbox.checked = false;
+      elements.tokenDialogError.textContent = "";
+      elements.tokenDialog.showModal();
+      window.setTimeout(() => elements.manualTokenInput.focus(), 0);
+      renderIcons();
+    }
+
+    function closeTokenDialog() {
+      elements.tokenDialog.close();
+      elements.tokenDialogError.textContent = "";
+    }
+
+    function importAccessToken(event) {
+      event.preventDefault();
+      const value = elements.manualTokenInput.value.trim();
+      if (!isValidAccessToken(value)) {
+        elements.tokenDialogError.textContent = "请输入有效且不含空格的访问令牌";
+        return;
+      }
+
+      state.accessToken = value;
+      state.accessTokenSource = "manual import";
+      state.accessTokenPersistent = elements.saveTokenCheckbox.checked;
+      if (state.accessTokenPersistent) {
+        window.localStorage.setItem("matrixDemoAccessToken", value);
+      } else {
+        window.localStorage.removeItem("matrixDemoAccessToken");
+      }
+      renderAccessToken();
+      closeTokenDialog();
+      addLog("system", "已导入访问令牌", {
+        source: state.accessTokenPersistent ? "localStorage" : "memory",
+        access_token: "[hidden]"
+      });
+      showToast(state.accessTokenPersistent ? "访问令牌已保存到本地" : "访问令牌仅用于当前会话");
+    }
+
+    function clearAccessToken() {
+      if (!state.accessToken || state.connected || state.connecting) {
+        return;
+      }
+
+      window.localStorage.removeItem("matrixDemoAccessToken");
+      state.accessToken = "";
+      state.accessTokenSource = "";
+      state.accessTokenPersistent = false;
+      renderAccessToken();
+      addLog("system", "已清除本地访问令牌", { storageKey: "matrixDemoAccessToken" });
+      showToast("本地访问令牌已清除");
+    }
+
+    function openSessionDialog(title, message) {
+      elements.sessionDialogTitle.textContent = title;
+      elements.sessionDialogMessage.textContent = message;
+      if (!elements.sessionDialog.open) {
+        elements.sessionDialog.showModal();
+        renderIcons();
+      }
+    }
+
+    function closeSessionDialog() {
+      if (elements.sessionDialog.open) {
+        elements.sessionDialog.close();
+      }
+    }
+
+    function retrySessionAfterManualAction() {
+      closeSessionDialog();
+      disconnect("用户确认后重新连接");
+      window.setTimeout(connect, 120);
+    }
+
+    function importManualFp(event) {
+      event.preventDefault();
+      const value = elements.manualFpInput.value.trim().toLowerCase();
+      if (!/^[a-f0-9]{32}$/.test(value)) {
+        elements.fpDialogError.textContent = "请输入 32 位十六进制字符串";
+        return;
+      }
+
+      window.localStorage.setItem("fp", value);
+      window.localStorage.setItem("matrixDemoFpSource", "manual");
+      state.fp = value;
+      state.fpSource = "manual import";
+      state.handshakeRejected = false;
+      renderFp();
+      closeFpDialog();
+      addLog("system", "已导入 fp", { fp: `${value.slice(0, 4)}...${value.slice(-4)}` });
+      showToast("已导入 fp");
+    }
+
+    async function copyFp() {
+      if (!state.fp) {
+        return;
+      }
+
+      showToast(await copyText(state.fp) ? "fp 已复制" : "复制失败，请手动选择文本");
+    }
+
+    function setMode(mode) {
+      if (state.mode === mode) {
+        return;
+      }
+
+      disconnect("切换运行模式");
+      state.mode = mode;
+      const live = mode === "live";
+      elements.liveModeButton.setAttribute("aria-pressed", String(live));
+      elements.mockModeButton.setAttribute("aria-pressed", String(!live));
+      elements.modeTitle.textContent = live ? "实时协议" : "本地模拟";
+      elements.modeDescription.textContent = live
+        ? "连接腾讯线上 WebSocket，检测前调用官方验证码"
+        : "不访问检测接口，模拟同样的消息与状态流";
+      elements.protocolLabel.textContent = live
+        ? (IS_LOCAL_HTTP ? (state.proxyAvailable ? "WS / Local proxy" : "Proxy offline") : "WSS / Direct")
+        : "WSS / Mock";
+      elements.endpointValue.textContent = live
+        ? (IS_LOCAL_HTTP ? `${ENDPOINT} -> ${UPSTREAM_ENDPOINT}` : ENDPOINT)
+        : "mock://ai_gen_txt_server/getClassify";
+      elements.usesValue.textContent = "--";
+      resetResult();
+      setConnectionState("idle", "未连接", live ? "fp 生成后即可建立匿名会话" : "模拟模式不会向腾讯发送数据");
+      addLog("system", "运行模式已切换", { mode });
+      updateControls();
+    }
+
+    function connect() {
+      if ((state.fp.length !== 32 && !state.accessToken) || state.connected || state.connecting) {
+        return;
+      }
+
+      const usingAccessToken = Boolean(state.accessToken);
+      const identity = usingAccessToken
+        ? {
+          payload: { access_token: state.accessToken },
+          label: "访问令牌握手",
+          logPayload: { access_token: "[hidden]" },
+          connectionDetail: "访问令牌已发送，等待服务端确认"
+        }
+        : {
+          payload: { fp: state.fp },
+          label: "匿名身份握手",
+          logPayload: { fp: state.fp },
+          connectionDetail: "匿名 fp 已发送，等待服务端确认"
+        };
+
+      state.connecting = true;
+      state.handshakeComplete = false;
+      state.handshakeRejected = false;
+      setConnectionState(
+        "connecting",
+        "连接中",
+        state.mode === "live"
+          ? (usingAccessToken ? "正在建立令牌会话" : "正在建立匿名 WSS 会话")
+          : "正在初始化模拟会话"
+      );
+      updateControls();
+
+      if (state.mode === "mock") {
+        window.setTimeout(() => {
+          state.connecting = false;
+          state.connected = true;
+          setConnectionState("connected", "已连接", identity.connectionDetail);
+          sendFrame(identity.payload, identity.label, identity.logPayload);
+          window.setTimeout(() => {
+            receiveFrame({ status: "success", availableUses: 5 });
+          }, 380);
+          updateControls();
+        }, 420);
+        return;
+      }
+
+      try {
+        const socket = new WebSocket(ENDPOINT);
+        state.socket = socket;
+
+        socket.addEventListener("open", () => {
+          state.connecting = false;
+          state.connected = true;
+          setConnectionState("connected", "已连接", identity.connectionDetail);
+          sendFrame(identity.payload, identity.label, identity.logPayload);
+          updateControls();
+        });
+
+        socket.addEventListener("message", event => {
+          receiveFrame(event.data);
+        });
+
+        socket.addEventListener("error", () => {
+          addLog("error", "WebSocket 错误", "连接被浏览器或服务端拒绝");
+          setConnectionState("error", "连接错误", "检查网络、Origin 或服务端策略");
+        });
+
+        socket.addEventListener("close", event => {
+          const rejected = state.handshakeRejected;
+          state.connected = false;
+          state.connecting = false;
+          state.handshakeComplete = false;
+          state.processing = false;
+          state.socket = null;
+          setConnectionState(
+            rejected ? "error" : (event.wasClean ? "idle" : "error"),
+            rejected ? (usingAccessToken ? "访问令牌未通过" : "fp 未通过") : "已断开",
+            rejected
+              ? (usingAccessToken ? "服务端返回 Invalid request，请确认令牌状态" : "服务端返回 Invalid request，请导入官网已接受的 fp")
+              : `close code: ${event.code || 1006}`
+          );
+          addLog(event.wasClean ? "system" : "error", "WebSocket 已关闭", {
+            code: event.code,
+            reason: event.reason || "none",
+            clean: event.wasClean
+          });
+          updateControls();
+        });
+      } catch (error) {
+        state.connecting = false;
+        state.socket = null;
+        setConnectionState("error", "连接失败", String(error));
+        addLog("error", "创建 WebSocket 失败", String(error));
+        updateControls();
+      }
+    }
+
+    function disconnect(reason = "用户断开") {
+      window.clearTimeout(state.pollTimer);
+      state.pollTimer = null;
+
+      if (state.socket) {
+        const socket = state.socket;
+        state.socket = null;
+        socket.close(1000, "demo disconnect");
+      }
+
+      if (state.connected || state.connecting) {
+        addLog("system", "会话结束", reason);
+      }
+
+      state.connected = false;
+      state.connecting = false;
+      state.handshakeComplete = false;
+      state.handshakeRejected = false;
+      state.processing = false;
+      state.pendingText = "";
+      setConnectionState("idle", "未连接", state.mode === "live" ? "fp 生成后即可建立匿名会话" : "模拟模式不会向腾讯发送数据");
+      updateControls();
+    }
+
+    function sendFrame(payload, label, logPayload = payload) {
+      addLog("out", label, logPayload);
+
+      if (state.mode === "mock") {
+        return true;
+      }
+
+      if (!state.socket || state.socket.readyState !== WebSocket.OPEN) {
+        addLog("error", "发送失败", "WebSocket 未连接");
+        return false;
+      }
+
+      state.socket.send(JSON.stringify(payload));
+      return true;
+    }
+
+    function parseFrame(raw) {
+      if (typeof raw !== "string") {
+        return raw;
+      }
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return raw;
+      }
+    }
+
+    function receiveFrame(raw) {
+      const data = parseFrame(raw);
+      addLog("in", "服务端消息", data);
+
+      if (!data || typeof data !== "object") {
+        return;
+      }
+
+      if (data.access_token) {
+        state.accessToken = data.access_token;
+        state.accessTokenSource = "server session";
+        state.accessTokenPersistent = false;
+        renderAccessToken();
+        sendFrame(
+          { access_token: data.access_token },
+          "确认访问令牌",
+          { access_token: "[hidden]" }
+        );
+      }
+
+      if (typeof data.availableUses === "number") {
+        elements.usesValue.textContent = String(data.availableUses);
+      }
+
+      if (String(data.code) === "1" && String(data.evil_level) === "0") {
+        sendDetectionText();
+        return;
+      }
+
+      if (data.code && String(data.code) !== "0") {
+        finishProcessing("验证码校验失败", data.msg || `code: ${data.code}`, true);
+        return;
+      }
+
+      if (!state.handshakeComplete && data.status === "failed" && /invalid request/i.test(data.msg || "")) {
+        const usingAccessToken = Boolean(state.accessToken);
+        state.handshakeRejected = true;
+        state.processing = false;
+        elements.fpState.textContent = "rejected";
+        elements.summaryTitle.textContent = usingAccessToken ? "访问令牌被服务端拒绝" : "新 fp 被服务端拒绝";
+        elements.summaryDetail.textContent = usingAccessToken ? "确认令牌有效后重试" : "导入官网已成功使用过的 fp 后重试";
+        addLog("error", "身份握手被拒绝", usingAccessToken ? "当前服务端不接受这个访问令牌" : "当前服务端不接受这个新 fp");
+        showToast(usingAccessToken ? "服务端拒绝了访问令牌" : "服务端拒绝了新 fp");
+        openSessionDialog(
+          usingAccessToken ? "访问令牌未获接受" : "匿名会话未获接受",
+          usingAccessToken
+            ? "服务端拒绝了当前访问令牌。请按官网规则确认令牌状态后再试。"
+            : "服务端拒绝了当前匿名 fp。请按官网规则完成必要处理，或导入已获授权的 fp 后再试。"
+        );
+        if (state.socket) {
+          state.socket.close(1000, "fp rejected");
+        }
+        updateControls();
+        return;
+      }
+
+      switch (data.status) {
+        case "success":
+          if (data.conf !== undefined || data.confidence !== undefined) {
+            renderResult(data);
+            finishProcessing("检测完成", "已收到置信度与分段结果");
+          } else {
+            state.handshakeComplete = true;
+            state.handshakeRejected = false;
+            setConnectionState("connected", "已连接", "匿名 fp 握手已完成");
+            updateControls();
+          }
+          break;
+        case "waiting":
+          elements.summaryTitle.textContent = "排队中";
+          elements.summaryDetail.textContent = `前方请求：${data.remaining ?? "--"}`;
+          break;
+        case "running":
+          elements.summaryTitle.textContent = "服务端处理中";
+          elements.summaryDetail.textContent = "任务已转入异步结果轮询";
+          if (data.cos) {
+            pollResult(data.cos, Date.now());
+          }
+          break;
+        case "limited":
+          elements.usesValue.textContent = "0";
+          finishProcessing("次数已用完", data.msg || "服务端返回 limited", true);
+          openSessionDialog(
+            "服务端已限制当前会话",
+            "当前匿名会话不能继续检测。请按服务规则完成必要处理后，再由你确认重新连接。"
+          );
+          break;
+        case "reauth":
+          finishProcessing("需要重新认证", data.msg || "服务端返回 reauth", true);
+          break;
+        case "failed":
+          finishProcessing("检测失败", data.msg || "服务端返回 failed", true);
+          break;
+      }
+    }
+
+    async function ensureCaptcha() {
+      if (state.captcha) {
+        return state.captcha;
+      }
+
+      if (!window.TencentCaptcha) {
+        await new Promise((resolve, reject) => {
+          const existing = document.querySelector('script[src="https://captcha.gtimg.com/TCaptcha.js"]');
+          if (existing) {
+            existing.addEventListener("load", resolve, { once: true });
+            existing.addEventListener("error", reject, { once: true });
+            return;
+          }
+
+          const script = document.createElement("script");
+          script.src = "https://captcha.gtimg.com/TCaptcha.js";
+          script.async = true;
+          script.addEventListener("load", resolve, { once: true });
+          script.addEventListener("error", () => reject(new Error("腾讯验证码脚本加载失败")), { once: true });
+          document.head.append(script);
+        });
+      }
+
+      if (!window.TencentCaptcha) {
+        throw new Error("TencentCaptcha 不可用");
+      }
+
+      state.captcha = new window.TencentCaptcha(
+        CAPTCHA_APP_ID,
+        handleCaptchaResult,
+        { needFeedBack: true, loading: false }
+      );
+      return state.captcha;
+    }
+
+    async function startDetection() {
+      if (!state.connected || state.processing) {
+        return;
+      }
+
+      const text = elements.textInput.value;
+      const units = getTextUnits(text);
+      if (units < MIN_TEXT_UNITS) {
+        showToast("文本不足 350 个计数单位");
+        return;
+      }
+
+      state.pendingText = text;
+      state.processing = true;
+      resetResult();
+      elements.summaryTitle.textContent = "等待验证码";
+      elements.summaryDetail.textContent = state.mode === "live" ? "腾讯验证码完成后继续检测" : "正在模拟验证码校验";
+      updateControls();
+
+      if (state.mode === "mock") {
+        window.setTimeout(() => {
+          sendFrame({ ticket: "mock_ticket", randstr: "mock_randstr" }, "验证码票据");
+          window.setTimeout(() => {
+            receiveFrame({ code: "1", evil_level: "0" });
+          }, 420);
+        }, 380);
+        return;
+      }
+
+      try {
+        const captcha = await ensureCaptcha();
+        captcha.show();
+      } catch (error) {
+        finishProcessing("验证码不可用", String(error), true);
+        addLog("error", "验证码初始化失败", String(error));
+      }
+    }
+
+    function handleCaptchaResult(result) {
+      if (result && result.ret === 0) {
+        sendFrame({ ticket: result.ticket, randstr: result.randstr }, "验证码票据", {
+          ticket: `${String(result.ticket).slice(0, 12)}...`,
+          randstr: result.randstr
+        });
+        elements.summaryTitle.textContent = "验证码已提交";
+        elements.summaryDetail.textContent = "等待服务端安全校验";
+        return;
+      }
+
+      const reason = result?.ret === 2 ? "用户关闭验证码" : `ret: ${result?.ret ?? "unknown"}`;
+      finishProcessing("验证码未完成", reason, true);
+    }
+
+    function sendDetectionText() {
+      if (!state.pendingText) {
+        finishProcessing("缺少检测文本", "pendingText 为空", true);
+        return;
+      }
+
+      const text = state.pendingText;
+      sendFrame(
+        { text },
+        "提交检测文本",
+        {
+          text: `${text.slice(0, 96)}${text.length > 96 ? "..." : ""}`,
+          units: getTextUnits(text)
+        }
+      );
+      elements.summaryTitle.textContent = "已提交文本";
+      elements.summaryDetail.textContent = "等待服务端检测结果";
+
+      if (state.mode === "mock") {
+        window.setTimeout(() => {
+          receiveFrame({ status: "waiting", remaining: 1 });
+        }, 360);
+        window.setTimeout(() => {
+          receiveFrame({
+            status: "success",
+            availableUses: 4,
+            conf: 0.18,
+            content_type: 0,
+            segment_labels: [0, 0, 1, 0]
+          });
+        }, 1250);
+      }
+    }
+
+    async function pollResult(cos, startTime) {
+      window.clearTimeout(state.pollTimer);
+      state.pollAttempts += 1;
+
+      if (state.pollAttempts > MAX_POLL_ATTEMPTS) {
+        finishProcessing("轮询超时", "超过 24 次结果查询", true);
+        return;
+      }
+
+      const url = new URL(RESULT_ENDPOINT);
+      url.searchParams.set("cos", cos);
+      url.searchParams.set("startTime", String(startTime));
+
+      addLog("system", "轮询异步结果", {
+        attempt: state.pollAttempts,
+        url: url.toString()
+      });
+
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          mode: "cors",
+          credentials: "omit",
+          headers: { Accept: "application/json" }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const body = await response.json();
+        addLog("in", "异步结果响应", body);
+
+        if (body.success === true && body.data) {
+          const result = typeof body.data === "string" ? JSON.parse(body.data) : body.data;
+          renderResult(result);
+          finishProcessing("检测完成", "异步结果已返回");
+          return;
+        }
+
+        if (body.success === false) {
+          finishProcessing("结果查询失败", body.message || "success=false", true);
+          return;
+        }
+
+        state.pollTimer = window.setTimeout(() => pollResult(cos, startTime), 5000);
+      } catch (error) {
+        finishProcessing("无法读取异步结果", "本地页面可能被 CORS 策略阻止", true);
+        addLog("error", "异步结果请求失败", String(error));
+      }
+    }
+
+    function renderResult(data) {
+      const field = data.conf !== undefined ? "conf" : "confidence";
+      const raw = Number(data[field]);
+      const normalized = raw > 1 ? raw / 100 : raw;
+      const valid = Number.isFinite(raw) && normalized >= 0 && normalized <= 1;
+      const percent = valid ? normalized * 100 : 0;
+      const belowTarget = valid && normalized < CONF_TARGET;
+
+      elements.scoreArea.classList.add("visible");
+      elements.scoreValue.textContent = valid ? `${normalized.toFixed(4)} (${percent.toFixed(1)}%)` : "无有效数值";
+      elements.scoreRawValue.textContent = valid ? `来源：${field} = ${String(data[field])}` : `来源：${field} 无效`;
+      elements.scoreFill.style.width = `${percent}%`;
+      elements.scoreFill.style.background = belowTarget ? "var(--teal)" : "var(--danger)";
+      elements.scoreStatus.className = `score-status ${belowTarget ? "pass" : "above-target"}`;
+      elements.scoreStatus.textContent = valid
+        ? (belowTarget ? "已低于目标阈值 0.50" : "未低于目标阈值 0.50")
+        : "服务端未返回可比较的 conf 数值";
+      elements.summaryTitle.textContent = valid
+        ? (belowTarget ? "测量结果低于目标" : "测量结果未低于目标")
+        : "未取得有效测量结果";
+      elements.summaryDetail.textContent = valid
+        ? `${field}: ${normalized.toFixed(4)} · segments: ${Array.isArray(data.segment_labels) ? data.segment_labels.length : 0}`
+        : `${field}: ${String(data[field])}`;
+    }
+
+    function resetResult() {
+      state.pollAttempts = 0;
+      window.clearTimeout(state.pollTimer);
+      state.pollTimer = null;
+      elements.scoreArea.classList.remove("visible");
+      elements.scoreValue.textContent = "--";
+      elements.scoreRawValue.textContent = "来源：--";
+      elements.scoreFill.style.width = "0";
+      elements.scoreStatus.className = "score-status";
+      elements.scoreStatus.textContent = "等待服务端测量结果";
+    }
+
+    function finishProcessing(title, detail, isError = false) {
+      state.processing = false;
+      state.pendingText = "";
+      elements.summaryTitle.textContent = title;
+      elements.summaryDetail.textContent = detail;
+      if (isError) {
+        showToast(title);
+      }
+      updateControls();
+    }
+
+    async function checkLocalProxy() {
+      if (!IS_LOCAL_HTTP) {
+        return;
+      }
+
+      try {
+        const response = await fetch("/health", { cache: "no-store" });
+        const data = await response.json();
+        state.proxyAvailable = response.ok && data.ok === true && data.proxy === "/matrix-proxy";
+      } catch (error) {
+        state.proxyAvailable = false;
+        addLog("error", "本地代理不可用", String(error));
+      }
+
+      elements.protocolLabel.textContent = state.proxyAvailable ? "WS / Local proxy" : "Proxy offline";
+      elements.endpointValue.textContent = `${ENDPOINT} -> ${UPSTREAM_ENDPOINT}`;
+      if (!state.proxyAvailable) {
+        setConnectionState("error", "本地代理未启动", "请运行 start-matrix-demo.cmd");
+      }
+      updateControls();
+    }
+
+    elements.liveModeButton.addEventListener("click", () => setMode("live"));
+    elements.mockModeButton.addEventListener("click", () => setMode("mock"));
+    elements.themeToggle.addEventListener("click", () => applyTheme(getTheme() === "dark" ? "light" : "dark", true));
+    elements.connectButton.addEventListener("click", connect);
+    elements.disconnectButton.addEventListener("click", () => disconnect());
+    elements.copyFpButton.addEventListener("click", copyFp);
+    elements.importFpButton.addEventListener("click", openFpDialog);
+    elements.closeFpDialogButton.addEventListener("click", closeFpDialog);
+    elements.cancelFpButton.addEventListener("click", closeFpDialog);
+    elements.importTokenButton.addEventListener("click", openTokenDialog);
+    elements.clearTokenButton.addEventListener("click", clearAccessToken);
+    elements.closeTokenDialogButton.addEventListener("click", closeTokenDialog);
+    elements.cancelTokenButton.addEventListener("click", closeTokenDialog);
+    elements.tokenForm.addEventListener("submit", importAccessToken);
+    elements.closeSessionDialogButton.addEventListener("click", closeSessionDialog);
+    elements.dismissSessionDialogButton.addEventListener("click", closeSessionDialog);
+    elements.retrySessionButton.addEventListener("click", retrySessionAfterManualAction);
+    elements.fpForm.addEventListener("submit", importManualFp);
+    elements.refreshFpButton.addEventListener("click", () => generateFp(true));
+    elements.textInput.addEventListener("input", updateTextCount);
+    elements.sampleButton.addEventListener("click", () => {
+      elements.textInput.value = sampleText;
+      updateTextCount();
+      showToast("已填入示例文本");
+    });
+    elements.clearTextButton.addEventListener("click", () => {
+      elements.textInput.value = "";
+      updateTextCount();
+      elements.textInput.focus();
+    });
+    elements.detectButton.addEventListener("click", startDetection);
+    elements.clearLogButton.addEventListener("click", clearLogs);
+    window.addEventListener("beforeunload", () => {
+      if (state.socket) {
+        state.socket.close(1000, "page unload");
+      }
+    });
+
+    applyTheme(getTheme());
+    window.addEventListener("load", renderIcons);
+    updateTextCount();
+    setConnectionState("idle", "未连接", "fp 生成后即可建立匿名会话");
+    await checkLocalProxy();
+    loadStoredAccessToken();
+    await generateFp();
+  </script>
+</body>
+</html>
