@@ -1028,7 +1028,8 @@
       text-transform: uppercase;
     }
 
-    .dialog-body input {
+    .dialog-body input,
+    .dialog-body textarea {
       width: 100%;
       height: 42px;
       padding: 0 11px;
@@ -1041,7 +1042,15 @@
       letter-spacing: 0;
     }
 
-    .dialog-body input:focus {
+    .dialog-body textarea {
+      min-height: 116px;
+      padding: 11px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .dialog-body input:focus,
+    .dialog-body textarea:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--focus-ring);
     }
@@ -1427,19 +1436,19 @@
 
   <dialog id="tokenDialog" class="fp-dialog">
     <div class="dialog-header">
-      <span>导入访问令牌</span>
+      <span>导入访问令牌池</span>
       <button id="closeTokenDialogButton" class="icon-button" type="button" title="关闭" aria-label="关闭">
         <i data-lucide="x"></i>
       </button>
     </div>
     <form id="tokenForm" class="dialog-body">
-      <label for="manualTokenInput">Access Token</label>
-      <input id="manualTokenInput" type="password" inputmode="text" maxlength="4096" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="仅在此浏览器中输入">
+      <label for="manualTokenInput">Access Tokens（每行一个）</label>
+      <textarea id="manualTokenInput" maxlength="32768" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="每行粘贴一个访问令牌"></textarea>
       <label class="token-save-option" for="saveTokenCheckbox">
         <input id="saveTokenCheckbox" type="checkbox">
         <span>保存到当前浏览器</span>
       </label>
-      <div class="dialog-note">保存后，后续打开此本地页面会自动加载。请勿在共享设备保存；令牌仅在点击连接时发送给腾讯，日志不会显示完整值。</div>
+      <div class="dialog-note">导入会更新当前令牌池并自动去重，内置令牌始终保留。保存后会记住令牌列表和当前使用位置；次数为 0 时自动切换下一枚。令牌仅在建立连接时发送，日志不会显示完整值。</div>
       <div id="tokenDialogError" class="dialog-error" aria-live="polite"></div>
       <div class="dialog-actions">
         <button id="cancelTokenButton" class="secondary-button" type="button">取消</button>
@@ -1483,6 +1492,15 @@
       ? `${window.location.origin}/matrix-result`
       : "https://matrix.tencent.com/user/detect/result";
     const CAPTCHA_APP_ID = "2089775896";
+    const ACCESS_TOKEN_POOL_STORAGE_KEY = "matrixDemoAccessTokens";
+    const ACCESS_TOKEN_INDEX_STORAGE_KEY = "matrixDemoAccessTokenIndex";
+    const LEGACY_ACCESS_TOKEN_STORAGE_KEY = "matrixDemoAccessToken";
+    const DEFAULT_ACCESS_TOKENS = Object.freeze([
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJAYWQ3OGQ2MWJhNjA0NGFlYTg2MzMyODZkNmVmN2JlNiIsImV4cCI6MTc4NzcyOTg4NjQzN30.XLWocWSwX8vk-MK4nwdhX0pehwAa4ttTQYZyTrUk78k",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJAZWI4ZDY5NzhlOTlkNGQ0ZDkzMTFjMzY1ZGEwMzBkOSIsImV4cCI6MTc4NzcyOTgzOTczNX0.9rm7ND4R30nyzVXhZwWaAiGSluDrOAh0q0LnVa9JVEU",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJANjgxMzM1Mjk5N2YzNDczOWJkYTRlY2I3YWFmMWQwMCIsImV4cCI6MTc4Nzg0MTUxNTA4NH0.vyVn2HenD6S6Ye-IB76MOCxiytxE22ZHRJKJ05DV1LQ",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJAYjUzNTc0NDlkOTZjNGY2OGE1YzA1YmIxMjYxODc2YyIsImV4cCI6MTc4Nzg0MzQwNjMyMn0.T-6nzTgXxETd2-bIft_JMn17mP-8e0yHFIIPQxMv14I"
+    ]);
     const FP_MODULE_URL = "https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4.5.1/+esm";
     const SHA_MODULE_URL = "https://cdn.jsdelivr.net/npm/js-sha256@0.11.0/+esm";
     const MIN_TEXT_UNITS = 350;
@@ -1570,9 +1588,13 @@
       handshakeRejected: false,
       processing: false,
       pendingText: "",
+      accessTokens: [],
+      accessTokenIndex: 0,
       accessToken: "",
       accessTokenSource: "",
       accessTokenPersistent: false,
+      exhaustedTokenIndexes: new Set(),
+      tokenRotationPending: false,
       captcha: null,
       pollTimer: null,
       pollAttempts: 0,
@@ -1864,39 +1886,85 @@
       return value.length >= 16 && value.length <= 4096 && !/\s/.test(value);
     }
 
+    function normalizeAccessTokens(values) {
+      return [...new Set(values.map(value => String(value || "").trim()).filter(isValidAccessToken))];
+    }
+
     function maskAccessToken(value) {
       return `已导入 ••••${value.slice(-4)}`;
     }
 
+    function syncActiveAccessToken() {
+      if (!state.accessTokens.length) {
+        state.accessTokenIndex = 0;
+        state.accessToken = "";
+        return;
+      }
+
+      state.accessTokenIndex = Math.min(Math.max(Number(state.accessTokenIndex) || 0, 0), state.accessTokens.length - 1);
+      state.accessToken = state.accessTokens[state.accessTokenIndex];
+    }
+
+    function persistAccessTokenPool() {
+      if (!state.accessTokenPersistent || !state.accessTokens.length) {
+        return;
+      }
+
+      window.localStorage.setItem(ACCESS_TOKEN_POOL_STORAGE_KEY, JSON.stringify(state.accessTokens));
+      window.localStorage.setItem(ACCESS_TOKEN_INDEX_STORAGE_KEY, String(state.accessTokenIndex));
+      window.localStorage.removeItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY);
+    }
+
     function renderAccessToken() {
       const hasAccessToken = Boolean(state.accessToken);
+      const tokenCount = state.accessTokens.length;
+      const currentPosition = hasAccessToken ? state.accessTokenIndex + 1 : 0;
       elements.connectButtonText.textContent = hasAccessToken ? "连接并发送令牌" : "连接并发送 fp";
       elements.tokenState.textContent = hasAccessToken
-        ? (state.accessTokenPersistent ? "已保存" : "会话中")
+        ? `${tokenCount} 枚 · ${state.accessTokenPersistent ? "已保存" : "会话中"}`
         : "未导入";
       elements.tokenValue.textContent = hasAccessToken
-        ? maskAccessToken(state.accessToken)
+        ? `当前 ${currentPosition}/${tokenCount} · ${maskAccessToken(state.accessToken)}`
         : "未导入，仅使用 fp";
       elements.tokenSource.textContent = hasAccessToken
         ? (state.accessTokenPersistent
-          ? "已保存到当前浏览器；仅在手动连接时使用。"
-          : "仅保存在当前页面会话中；关闭页面后失效。")
+          ? "令牌池已保存；次数为 0 时自动切换并记住当前位置。"
+          : "令牌池仅保存在当前页面会话中；次数为 0 时自动切换。")
         : "令牌不会显示在页面或日志中。";
       updateControls();
     }
 
-    function loadStoredAccessToken() {
-      const stored = (window.localStorage.getItem("matrixDemoAccessToken") || "").trim();
-      if (!isValidAccessToken(stored)) {
-        renderAccessToken();
-        return;
+    function loadStoredAccessTokens() {
+      let storedTokens = [];
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem(ACCESS_TOKEN_POOL_STORAGE_KEY) || "[]");
+        if (Array.isArray(parsed)) {
+          storedTokens = normalizeAccessTokens(parsed);
+        }
+      } catch {
+        storedTokens = [];
       }
 
-      state.accessToken = stored;
-      state.accessTokenSource = "localStorage";
+      const legacyToken = (window.localStorage.getItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY) || "").trim();
+      const embeddedTokens = normalizeAccessTokens(DEFAULT_ACCESS_TOKENS);
+      state.accessTokens = normalizeAccessTokens([
+        ...embeddedTokens,
+        ...storedTokens,
+        ...(embeddedTokens.length || storedTokens.length ? [] : [legacyToken])
+      ]);
+      state.accessTokenIndex = Number.parseInt(window.localStorage.getItem(ACCESS_TOKEN_INDEX_STORAGE_KEY) || "0", 10) || 0;
+      state.accessTokenSource = storedTokens.length ? "embedded code + localStorage" : "embedded code";
       state.accessTokenPersistent = true;
+      state.exhaustedTokenIndexes.clear();
+      syncActiveAccessToken();
+      persistAccessTokenPool();
       renderAccessToken();
-      addLog("system", "已加载本地访问令牌", { storageKey: "matrixDemoAccessToken", access_token: "[hidden]" });
+      addLog("system", "已加载访问令牌池", {
+        source: state.accessTokenSource,
+        count: state.accessTokens.length,
+        current: state.accessTokenIndex + 1,
+        access_token: "[hidden]"
+      });
     }
 
     function openFpDialog() {
@@ -1914,7 +1982,7 @@
 
     function openTokenDialog() {
       elements.manualTokenInput.value = "";
-      elements.saveTokenCheckbox.checked = false;
+      elements.saveTokenCheckbox.checked = true;
       elements.tokenDialogError.textContent = "";
       elements.tokenDialog.showModal();
       window.setTimeout(() => elements.manualTokenInput.focus(), 0);
@@ -1928,27 +1996,33 @@
 
     function importAccessToken(event) {
       event.preventDefault();
-      const value = elements.manualTokenInput.value.trim();
-      if (!isValidAccessToken(value)) {
-        elements.tokenDialogError.textContent = "请输入有效且不含空格的访问令牌";
+      const values = normalizeAccessTokens(elements.manualTokenInput.value.split(/[\s,;]+/));
+      if (!values.length) {
+        elements.tokenDialogError.textContent = "请至少输入一个有效且不含空格的访问令牌";
         return;
       }
 
-      state.accessToken = value;
+      state.accessTokens = values;
+      state.accessTokenIndex = 0;
+      state.exhaustedTokenIndexes.clear();
+      syncActiveAccessToken();
       state.accessTokenSource = "manual import";
       state.accessTokenPersistent = elements.saveTokenCheckbox.checked;
       if (state.accessTokenPersistent) {
-        window.localStorage.setItem("matrixDemoAccessToken", value);
+        persistAccessTokenPool();
       } else {
-        window.localStorage.removeItem("matrixDemoAccessToken");
+        window.localStorage.removeItem(ACCESS_TOKEN_POOL_STORAGE_KEY);
+        window.localStorage.removeItem(ACCESS_TOKEN_INDEX_STORAGE_KEY);
+        window.localStorage.removeItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY);
       }
       renderAccessToken();
       closeTokenDialog();
-      addLog("system", "已导入访问令牌", {
+      addLog("system", "已导入访问令牌池", {
         source: state.accessTokenPersistent ? "localStorage" : "memory",
+        count: state.accessTokens.length,
         access_token: "[hidden]"
       });
-      showToast(state.accessTokenPersistent ? "访问令牌已保存到本地" : "访问令牌仅用于当前会话");
+      showToast(state.accessTokenPersistent ? `已保存 ${state.accessTokens.length} 枚访问令牌` : `已导入 ${state.accessTokens.length} 枚会话令牌`);
     }
 
     function clearAccessToken() {
@@ -1956,13 +2030,74 @@
         return;
       }
 
-      window.localStorage.removeItem("matrixDemoAccessToken");
+      window.localStorage.removeItem(ACCESS_TOKEN_POOL_STORAGE_KEY);
+      window.localStorage.removeItem(ACCESS_TOKEN_INDEX_STORAGE_KEY);
+      window.localStorage.removeItem(LEGACY_ACCESS_TOKEN_STORAGE_KEY);
+      state.accessTokens = [];
+      state.accessTokenIndex = 0;
       state.accessToken = "";
       state.accessTokenSource = "";
       state.accessTokenPersistent = false;
+      state.exhaustedTokenIndexes.clear();
       renderAccessToken();
-      addLog("system", "已清除本地访问令牌", { storageKey: "matrixDemoAccessToken" });
-      showToast("本地访问令牌已清除");
+      addLog("system", "已清除当前令牌池", { storageKey: ACCESS_TOKEN_POOL_STORAGE_KEY });
+      showToast("当前令牌池已清除；刷新页面会恢复内置令牌");
+    }
+
+    function rotateAccessToken(reason) {
+      if (!state.accessTokens.length || state.tokenRotationPending) {
+        return false;
+      }
+
+      state.exhaustedTokenIndexes.add(state.accessTokenIndex);
+      let nextIndex = -1;
+      for (let offset = 1; offset <= state.accessTokens.length; offset += 1) {
+        const candidate = (state.accessTokenIndex + offset) % state.accessTokens.length;
+        if (!state.exhaustedTokenIndexes.has(candidate)) {
+          nextIndex = candidate;
+          break;
+        }
+      }
+
+      if (nextIndex === -1) {
+        finishProcessing("所有令牌次数已用完", "令牌池中没有可继续使用的令牌", true);
+        addLog("error", "自动切换停止", { reason, exhausted: state.exhaustedTokenIndexes.size, total: state.accessTokens.length });
+        return false;
+      }
+
+      const previousPosition = state.accessTokenIndex + 1;
+      state.accessTokenIndex = nextIndex;
+      syncActiveAccessToken();
+      persistAccessTokenPool();
+      state.tokenRotationPending = true;
+      state.processing = false;
+      state.pendingText = "";
+      state.handshakeRejected = false;
+      closeSessionDialog();
+      renderAccessToken();
+      addLog("system", "访问令牌已自动切换", {
+        reason,
+        from: previousPosition,
+        to: state.accessTokenIndex + 1,
+        total: state.accessTokens.length,
+        access_token: "[hidden]"
+      });
+      showToast(`当前令牌次数为 0，已切换到第 ${state.accessTokenIndex + 1} 枚`);
+
+      if (state.socket) {
+        state.socket.close(1000, "token rotation");
+      } else {
+        state.connected = false;
+        state.connecting = false;
+        state.handshakeComplete = false;
+        setConnectionState("connecting", "正在切换令牌", `准备连接第 ${state.accessTokenIndex + 1}/${state.accessTokens.length} 枚`);
+        updateControls();
+        window.setTimeout(() => {
+          state.tokenRotationPending = false;
+          connect();
+        }, 150);
+      }
+      return true;
     }
 
     function openSessionDialog(title, message) {
@@ -2109,11 +2244,22 @@
 
         socket.addEventListener("close", event => {
           const rejected = state.handshakeRejected;
+          const rotatingToken = state.tokenRotationPending;
           state.connected = false;
           state.connecting = false;
           state.handshakeComplete = false;
           state.processing = false;
           state.socket = null;
+          if (rotatingToken) {
+            setConnectionState("connecting", "正在切换令牌", `准备连接第 ${state.accessTokenIndex + 1}/${state.accessTokens.length} 枚`);
+            addLog("system", "旧令牌会话已关闭", { next: state.accessTokenIndex + 1, total: state.accessTokens.length });
+            updateControls();
+            window.setTimeout(() => {
+              state.tokenRotationPending = false;
+              connect();
+            }, 150);
+            return;
+          }
           setConnectionState(
             rejected ? "error" : (event.wasClean ? "idle" : "error"),
             rejected ? (usingAccessToken ? "访问令牌未通过" : "fp 未通过") : "已断开",
@@ -2197,10 +2343,12 @@
       }
 
       if (data.access_token) {
-        state.accessToken = data.access_token;
-        state.accessTokenSource = "server session";
-        state.accessTokenPersistent = false;
-        renderAccessToken();
+        if (!state.accessTokens.length) {
+          state.accessToken = data.access_token;
+          state.accessTokenSource = "server session";
+          state.accessTokenPersistent = false;
+          renderAccessToken();
+        }
         sendFrame(
           { access_token: data.access_token },
           "确认访问令牌",
@@ -2208,8 +2356,14 @@
         );
       }
 
-      if (typeof data.availableUses === "number") {
-        elements.usesValue.textContent = String(data.availableUses);
+      const availableUses = data.availableUses === undefined ? null : Number(data.availableUses);
+      if (Number.isFinite(availableUses)) {
+        elements.usesValue.textContent = String(availableUses);
+        if (availableUses > 0) {
+          state.exhaustedTokenIndexes.delete(state.accessTokenIndex);
+        } else if (availableUses === 0 && data.status !== "limited" && state.accessTokens.length) {
+          window.queueMicrotask(() => rotateAccessToken("availableUses = 0"));
+        }
       }
 
       if (String(data.code) === "1" && String(data.evil_level) === "0") {
@@ -2252,7 +2406,7 @@
           } else {
             state.handshakeComplete = true;
             state.handshakeRejected = false;
-            setConnectionState("connected", "已连接", "匿名 fp 握手已完成");
+            setConnectionState("connected", "已连接", state.accessTokens.length ? "访问令牌握手已完成" : "匿名 fp 握手已完成");
             updateControls();
           }
           break;
@@ -2269,11 +2423,13 @@
           break;
         case "limited":
           elements.usesValue.textContent = "0";
-          finishProcessing("次数已用完", data.msg || "服务端返回 limited", true);
-          openSessionDialog(
-            "服务端已限制当前会话",
-            "当前匿名会话不能继续检测。请按服务规则完成必要处理后，再由你确认重新连接。"
-          );
+          if (!rotateAccessToken("status = limited")) {
+            finishProcessing("次数已用完", data.msg || "服务端返回 limited", true);
+            openSessionDialog(
+              "令牌池已全部用完",
+              "当前令牌池没有可继续使用的令牌，请补充新令牌后重新连接。"
+            );
+          }
           break;
         case "reauth":
           finishProcessing("需要重新认证", data.msg || "服务端返回 reauth", true);
@@ -2571,7 +2727,7 @@
     updateTextCount();
     setConnectionState("idle", "未连接", "fp 生成后即可建立匿名会话");
     await checkLocalProxy();
-    loadStoredAccessToken();
+    loadStoredAccessTokens();
     await generateFp();
   </script>
 </body>
